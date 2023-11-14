@@ -26,13 +26,18 @@ exports.createUser = async (req, res) => {
             res.status(400).json(err);
           } else {
             const token = jwt.sign(sanitiZeUser(user), SECRET_KEY);
-            res
-              .cookie("jwt", token, {
-                expires: new Date(Date.now() + 3600000),
-                httpOnly: true,
-              })
-              .status(201)
-              .json({ id:user.id,role:user.role });
+            res.cookie("jwt", req.user.token, {
+              expires: new Date(Date.now() + 3600000),
+              httpOnly: true,
+            });
+            res.status(201).json({
+              id: user.id,
+              role: user.role,
+              token:token,
+              email: user.email,
+              addresses: user.addresses,
+              orders: user.orders,
+            });
           }
         });
       }
@@ -43,14 +48,26 @@ exports.createUser = async (req, res) => {
 };
 
 exports.loginUser = async (req, res) => {
-  const user=req.user;
-  res
-    .cookie("jwt", req.user.token, {
-      expires: new Date(Date.now() + 3600000),
-      httpOnly: true,
-    })
-    .status(201)
-    .json({id:user.id,role:user.role,token:user.token});
+  try {
+    const user = req.user;
+
+    res
+      .cookie("jwt", req.user.token, {
+        expires: new Date(Date.now() + 3600000),
+        httpOnly: true,
+      })
+      .status(201)
+      .json({
+        id: user.id,
+        role: user.role,
+        token: user.token,
+        email: user.email,
+        addresses: user.addresses,
+        orders: user.orders,
+      });
+  } catch (err) {
+    res.status(400).json(err);
+  }
 };
 
 exports.checkAuth = async (req, res) => {
@@ -59,4 +76,13 @@ exports.checkAuth = async (req, res) => {
   } else {
     res.sendStatus(401);
   }
+};
+
+exports.logout = async (req, res) => {
+  res
+    .cookie("jwt", null, {
+      expires: new Date(Date.now()),
+      httpOnly: true,
+    })
+    .sendStatus(200);
 };

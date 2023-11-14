@@ -50,13 +50,14 @@ server.use(
 );
 
 server.use(express.json()); //to parse req.body
-server.use("/products", IsAuth(), ProductsRouters.router); //to parse req.body
-server.use("/category", IsAuth(), CategoriesRouters.router);
-server.use("/brands", IsAuth(), BrandRouters.router);
+server.use("/products", ProductsRouters.router); //to parse req.body
+server.use("/category", CategoriesRouters.router);
+server.use("/brands", BrandRouters.router);
 server.use("/users", IsAuth(), UsersRouters.router);
 server.use("/auth", AuthRouters.router);
 server.use("/cart", IsAuth(), CartRouters.router);
 server.use("/orders", IsAuth(), OrderRouters.router);
+
 server.get("*", (req, res) =>
   res.sendFile(path.resolve("build", "index.html"))
 );
@@ -88,7 +89,14 @@ passport.use(
             sanitiZeUser(user),
             process.env.JWT_SECREET_KEY
           );
-          done(null, { id: user.id, role: user.role, token });
+          done(null, {
+            id: user.id,
+            role: user.role,
+            token,
+            email: user.email,
+            addresses: user.addresses,
+            orders: user.orders,
+          });
         }
       );
     } catch (err) {
@@ -103,7 +111,13 @@ passport.use(
     try {
       const user = await User.findById(jwt_payload.id);
       if (user) {
-        return done(null, sanitiZeUser(user)); //this calls serializer
+        return done(null, {
+          id: user.id,
+          role: user.role,
+          email: user.email,
+          addresses: user.addresses,
+          orders: user.orders,
+        }); //this calls serializer
       } else {
         return done(null, false);
       }
@@ -116,9 +130,15 @@ passport.use(
 //this creates session variable req.user on being called from callbacks
 //take user send  id
 passport.serializeUser(function (user, cb) {
-  console.log("serialize", user);
+  console.log("serialize");
   process.nextTick(function () {
-    return cb(null, { id: user.id, role: user.role });
+    return cb(null, {
+      id: user.id,
+      role: user.role,
+      email: user.email,
+      addresses: user.addresses,
+      orders: user.orders,
+    });
   });
 });
 
@@ -126,7 +146,7 @@ passport.serializeUser(function (user, cb) {
 //take id send  user
 
 passport.deserializeUser(function (user, cb) {
-  console.log("de-serialize", user);
+  console.log("de-serialize");
   process.nextTick(function () {
     return cb(null, user);
   });
@@ -199,7 +219,7 @@ server.post(
 main().catch((err) => console.log(err));
 
 async function main() {
-  await mongoose.connect(process.env.MONGO_CONNECT);
+  await mongoose.connect(process.env.MONGODB_URL);
   console.log("mongoose connected");
 }
 
