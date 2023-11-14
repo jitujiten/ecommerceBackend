@@ -24,6 +24,8 @@ const { User } = require("./model/User");
 const { IsAuth, sanitiZeUser, cookieExtractor } = require("./services/common");
 const { Order } = require("./model/Order");
 
+
+
 //jwt option
 const opts = {};
 opts.jwtFromRequest = cookieExtractor;
@@ -58,9 +60,12 @@ server.use("/auth", AuthRouters.router);
 server.use("/cart", IsAuth(), CartRouters.router);
 server.use("/orders", IsAuth(), OrderRouters.router);
 
+
+
 server.get("*", (req, res) =>
   res.sendFile(path.resolve("build", "index.html"))
 );
+
 //passport strategies
 passport.use(
   "local",

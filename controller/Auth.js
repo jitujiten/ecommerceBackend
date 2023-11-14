@@ -1,6 +1,6 @@
 const { User } = require("../model/User");
 const crypto = require("crypto");
-const { sanitiZeUser } = require("../services/common");
+const { sanitiZeUser, transporter } = require("../services/common");
 const jwt = require("jsonwebtoken");
 
 const SECRET_KEY = "SECRET_KEY";
@@ -33,7 +33,7 @@ exports.createUser = async (req, res) => {
             res.status(201).json({
               id: user.id,
               role: user.role,
-              token:token,
+              token: token,
               email: user.email,
               addresses: user.addresses,
               orders: user.orders,
@@ -85,4 +85,64 @@ exports.logout = async (req, res) => {
       httpOnly: true,
     })
     .sendStatus(200);
+};
+
+exports.resetPasswordRequest = async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email: email });
+
+  if (user) {
+    const token = crypto.randomBytes(48).toString("hex");
+    user.resetPasswordToken = token;
+    const usersave = await user.save();
+    if (usersave && email) {
+      let url = `http://localhost:3000/reset-password?token=${token}&email=${email}`;
+      let info = await transporter.sendMail({
+        from: '"oneStore" <jituyt8456@gmail.com>', // sender address
+        to: email, // list of receivers
+        subject: "Reset Password for  oneStore", // Subject line
+        html: `<p>Click <a href='${url}'> here </a> to Reset Password</p>`, // html body
+      });
+
+      res.json(info);
+    } else {
+      res.sendStatus(400);
+    }
+  } else {
+    res.sendStatus(400);
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { email } = req.body;
+  const { password } = req.body;
+  const { token } = req.body;
+  const user = await User.findOne({ email: email, resetPasswordToken: token });
+
+  if (user) {
+    const salt = crypto.randomBytes(16);
+    crypto.pbkdf2(
+      req.body.password,
+      salt,
+      310000,
+      32,
+      "sha256",
+      async function (err, hashedPassword) {
+       user.password=hashedPassword
+       user.salt=salt;
+       await user.save()
+      });
+
+    let info = await transporter.sendMail({
+      from: '"oneStore" <jituyt8456@gmail.com>', // sender address
+      to: email, // list of receivers
+      subject: "Reset Password successfully", // Subject line
+      html: `<h2>Reset Password successfully ,of your OneStore account</h2>`, // html body
+    });
+
+    res.json(info);
+  } else {
+    res.sendStatus(400);
+  }
 };
