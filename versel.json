@@ -1,14 +1,35 @@
 {
+  "version": 2,
   "builds": [
     {
-      "src": "index.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "build/**",
+      "src": "build/index.html",
       "use": "@vercel/static"
     }
   ],
-
-  "rewrites": [{ "source": "/(.*)", "destination": "index.js" }]
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/build/static/$1"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/build/favicon.ico"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/build/manifest.json"
+    },
+    {
+      "src": "/(.*\\.(js|css))",
+      "dest": "/build/$1"
+    },
+    {
+      "src": "/images/(.*)",
+      "dest": "/build/images/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/build/index.html"
+    }
+  ]
 }
