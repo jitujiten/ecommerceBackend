@@ -20,26 +20,33 @@ exports.createUser = async (req, res) => {
           password: hashedPassword,
           salt,
         });
-        const user = await newuser.save();
-        req.login(sanitiZeUser(user), (err) => {
-          if (err) {
-            res.status(400).json(err);
-          } else {
-            const token = jwt.sign(sanitiZeUser(user), SECRET_KEY);
-            res.cookie("jwt", req.user.token, {
+
+        try {
+          const existingUser = await User.findOne({ email: req.body.email });
+          if (existingUser) {
+            return res.status(400).json({ message: "Email already in use" });
+          }
+
+          const user = await newuser.save();
+          const token = jwt.sign(sanitiZeUser(user), SECRET_KEY);
+          if (!existingUser) {
+            // Only send the cookie if the user doesn't exist already
+            res.cookie("jwt", token, {
               expires: new Date(Date.now() + 3600000),
               httpOnly: true,
             });
-            res.status(201).json({
-              id: user.id,
-              role: user.role,
-              token: token,
-              email: user.email,
-              addresses: user.addresses,
-              orders: user.orders,
-            });
           }
-        });
+          res.status(201).json({
+            id: user.id,
+            role: user.role,
+            token: token,
+            email: user.email,
+            addresses: user.addresses,
+            orders: user.orders,
+          });
+        } catch (error) {
+          res.status(400).json({ message: "Error creating user", error });
+        }
       }
     );
   } catch (err) {
@@ -47,17 +54,19 @@ exports.createUser = async (req, res) => {
   }
 };
 
+
+
 exports.loginUser = async (req, res) => {
   try {
-    const user = req.user;
+    // Assuming authentication was successful and user is available in req.user
+    if (req.user) {
+      const user = req.user;
+      const token = jwt.sign(sanitiZeUser(user), SECRET_KEY);
 
-    res
-      .cookie("jwt", req.user.token, {
+      return res.cookie("jwt", token, {
         expires: new Date(Date.now() + 3600000),
         httpOnly: true,
-      })
-      .status(201)
-      .json({
+      }).status(201).json({
         id: user.id,
         role: user.role,
         token: user.token,
@@ -65,10 +74,15 @@ exports.loginUser = async (req, res) => {
         addresses: user.addresses,
         orders: user.orders,
       });
+    } else {
+      // Handle case when user is not available (e.g., invalid login credentials)
+      return res.status(400).json({ message: "Invalid login credentials" });
+    }
   } catch (err) {
-    res.status(400).json(err);
+    return res.status(400).json({ message: "Invalid login credentials" });
   }
 };
+
 
 exports.checkAuth = async (req, res) => {
   if (req.user) {

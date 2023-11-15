@@ -24,8 +24,6 @@ const { User } = require("./model/User");
 const { IsAuth, sanitiZeUser, cookieExtractor } = require("./services/common");
 const { Order } = require("./model/Order");
 
-
-
 //jwt option
 const opts = {};
 opts.jwtFromRequest = cookieExtractor;
@@ -75,7 +73,7 @@ passport.use(
     try {
       const user = await User.findOne({ email: email }).exec();
       if (!user) {
-        done(null, false, { message: "Invalid Credentials" });
+       return done(null, false, { message: "Invalid Credentials" });
       }
 
       crypto.pbkdf2(
@@ -86,13 +84,13 @@ passport.use(
         "sha256",
         async function (err, hashedPassword) {
           if (!crypto.timingSafeEqual(user.password, hashedPassword)) {
-            done(null, false, { message: "Invalid Credentials" });
+            return done(null, false, { message: "Invalid Credentials" });
           }
           const token = jwt.sign(
             sanitiZeUser(user),
             process.env.JWT_SECREET_KEY
           );
-          done(null, {
+          return done(null, {
             id: user.id,
             role: user.role,
             token,
@@ -103,7 +101,7 @@ passport.use(
         }
       );
     } catch (err) {
-      done(err);
+      return done(err);
     }
   })
 );
@@ -160,24 +158,28 @@ passport.deserializeUser(function (user, cb) {
 const stripe = require("stripe")(process.env.STRIPE_KEY);
 
 server.post("/create-payment-intent", async (req, res) => {
-  const { totalAmount, orderId } = req.body;
+  const { totalAmount, OrderId } = req.body;
 
-  // Create a PaymentIntent with the order amount and currency
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: totalAmount * 100,
-    currency: "inr",
-    // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
-    automatic_payment_methods: {
-      enabled: true,
-    },
-    metadata: {
-      orderId,
-    },
-  });
+  if (!OrderId || !totalAmount) {
+    return res.status(400).send({ error: "Missing orderId or totalAmount in the request body" });
+  }
+    // Create a PaymentIntent with the order amount and currency
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: totalAmount * 100,
+      currency: "inr",
+      // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+      automatic_payment_methods: {
+        enabled: true,
+      },
+      metadata: {
+        OrderId,
+      },
+    });
 
-  res.send({
-    clientSecret: paymentIntent.client_secret,
-  });
+    res.send({
+      clientSecret: paymentIntent.client_secret,
+    });
+ 
 });
 
 ///webhook

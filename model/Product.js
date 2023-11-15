@@ -28,6 +28,8 @@ const ProductSchema = new Schema({
   thumbnail: { type: String, required: true },
   images: { type: [String], required: true },
   deleted: { type: Boolean, default: false },
+  colors:{type:[Schema.Types.Mixed]},
+  sizes:{type:[Schema.Types.Mixed]}
 });
 
 const virtual = ProductSchema.virtual("id");
