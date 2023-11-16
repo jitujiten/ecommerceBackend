@@ -156,7 +156,7 @@ exports.invoiceTemplate = async function (order) {
             <tr>
               <td align="center" valign="top" style="padding: 36px 24px;">
               <div style="width: 150px; height: 150px; border-radius: 50%; overflow: hidden; background-color: blue;">
-              <img src="https://via.placeholder.com/150x150.png?text=OneStore" alt="OneStore Logo" style="width: 100%; height: auto; display: block;">
+              <img src="https://github.com/jitujiten/ecommerceBackend/assets/120164938/5ebaecd4-bea3-4f43-897b-4f31e06867bd" alt="OneStore Logo" style="width: 100%; height: auto; display: block;">
             </div>
               </td>
             </tr>

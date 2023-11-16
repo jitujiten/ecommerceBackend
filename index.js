@@ -12,6 +12,7 @@ const ExtractJwt = require("passport-jwt").ExtractJwt;
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const path = require("path");
+const bodyParser = require('body-parser');
 
 const ProductsRouters = require("./routes/Products");
 const CategoriesRouters = require("./routes/Category");
@@ -33,6 +34,7 @@ opts.secretOrKey = process.env.JWT_SECREET_KEY;
 server.use(express.static(path.resolve(__dirname, "build")));
 
 server.use(cookieParser());
+server.use(bodyParser.json({ limit: '500kb' }));
 
 server.use(
   session({
@@ -97,6 +99,8 @@ passport.use(
             email: user.email,
             addresses: user.addresses,
             orders: user.orders,
+            name:user.name,
+            ProfileUrl:user.ProfileUrl
           });
         }
       );
@@ -118,6 +122,8 @@ passport.use(
           email: user.email,
           addresses: user.addresses,
           orders: user.orders,
+          name:user.name,
+          ProfileUrl:user.ProfileUrl
         }); //this calls serializer
       } else {
         return done(null, false);
@@ -139,6 +145,8 @@ passport.serializeUser(function (user, cb) {
       email: user.email,
       addresses: user.addresses,
       orders: user.orders,
+      name:user.name,
+      ProfileUrl:user.ProfileUrl
     });
   });
 });

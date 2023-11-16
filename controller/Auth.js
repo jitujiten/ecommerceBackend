@@ -30,6 +30,7 @@ exports.createUser = async (req, res) => {
           const user = await newuser.save();
           const token = jwt.sign(sanitiZeUser(user), SECRET_KEY);
           if (!existingUser) {
+          
             // Only send the cookie if the user doesn't exist already
             res.cookie("jwt", token, {
               expires: new Date(Date.now() + 3600000),
@@ -43,6 +44,8 @@ exports.createUser = async (req, res) => {
             email: user.email,
             addresses: user.addresses,
             orders: user.orders,
+            name:user.name,
+            ProfileUrl:user.ProfileUrl
           });
         } catch (error) {
           res.status(400).json({ message: "Error creating user", error });
@@ -73,6 +76,8 @@ exports.loginUser = async (req, res) => {
         email: user.email,
         addresses: user.addresses,
         orders: user.orders,
+        name:user.name,
+        ProfileUrl:user.ProfileUrl
       });
     } else {
       // Handle case when user is not available (e.g., invalid login credentials)
