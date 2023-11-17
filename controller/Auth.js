@@ -116,7 +116,7 @@ exports.resetPasswordRequest = async (req, res) => {
     user.resetPasswordToken = token;
     const usersave = await user.save();
     if (usersave && email) {
-      let url = `http://localhost:3000/reset-password?token=${token}&email=${email}`;
+      let url = `https://ecommerce-backend-tau-seven.vercel.app/reset-password?token=${token}&email=${email}`;
       let info = await transporter.sendMail({
         from: '"oneStore" <jituyt8456@gmail.com>', // sender address
         to: email, // list of receivers
