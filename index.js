@@ -49,7 +49,8 @@ server.post(
     switch (event.type) {
       case "payment_intent.succeeded":
         const paymentIntentSucceeded = event.data.object;
-        const order = await Order.find(paymentIntentSucceeded.metadata.orderId);
+       
+        const order = await Order.findById(paymentIntentSucceeded.metadata.OrderId);
         order.paymentStatus = "received";
         await order.save();
         // Then define and call a function to handle the event payment_intent.succeeded
