@@ -41,7 +41,7 @@ server.post(
     try {
       event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
     } catch (err) {
-      response.status(501).send(`Webhook Error: ${err.message}`);
+      response.status(400).send(`Webhook Error: ${err.message}`);
       return;
     }
 
