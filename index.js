@@ -25,6 +25,48 @@ const { User } = require("./model/User");
 const { IsAuth, sanitiZeUser, cookieExtractor } = require("./services/common");
 const { Order } = require("./model/Order");
 
+///webhook
+
+// This is your Stripe CLI webhook secret for testing your endpoint locally.
+const endpointSecret = process.env.ENDPOINT_SECREET;
+
+server.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  async (request, response) => {
+    const sig = request.headers["stripe-signature"];
+
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
+    } catch (err) {
+      response.status(400).send(`Webhook Error: ${err.message}`);
+      return;
+    }
+
+    // Handle the event
+    switch (event.type) {
+      case "payment_intent.succeeded":
+        const paymentIntentSucceeded = event.data.object;
+        const order = await Order.find(paymentIntentSucceeded.metadata.orderId);
+        order.paymentStatus = "received";
+        await order.save();
+        // Then define and call a function to handle the event payment_intent.succeeded
+        break;
+      // ... handle other event types
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    // Return a 200 response to acknowledge receipt of the event
+    response.send();
+  }
+);
+
+
+
+
 //jwt option
 const opts = {};
 opts.jwtFromRequest = cookieExtractor;
@@ -193,44 +235,7 @@ server.post("/create-payment-intent", async (req, res) => {
   });
 });
 
-///webhook
 
-// This is your Stripe CLI webhook secret for testing your endpoint locally.
-const endpointSecret = process.env.ENDPOINT_SECREET;
-
-server.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  async (request, response) => {
-    const sig = request.headers["stripe-signature"];
-
-    let event;
-
-    try {
-      event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
-    } catch (err) {
-      response.status(400).send(`Webhook Error: ${err.message}`);
-      return;
-    }
-
-    // Handle the event
-    switch (event.type) {
-      case "payment_intent.succeeded":
-        const paymentIntentSucceeded = event.data.object;
-        const order = await Order.find(paymentIntentSucceeded.metadata.orderId);
-        order.paymentStatus = "received";
-        await order.save();
-        // Then define and call a function to handle the event payment_intent.succeeded
-        break;
-      // ... handle other event types
-      default:
-        console.log(`Unhandled event type ${event.type}`);
-    }
-
-    // Return a 200 response to acknowledge receipt of the event
-    response.send();
-  }
-);
 
 main().catch((err) => console.log(err));
 
